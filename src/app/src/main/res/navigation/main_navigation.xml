@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_navigation"
+    app:startDestination="@id/navigation_alpha">
+
+    <fragment
+        android:id="@+id/navigation_alpha"
+        android:name="edu.chapman.monsutauoka.ui.first.AlphaFragment"
+        android:label="@string/title_first"
+        tools:layout="@layout/fragment_alpha">
+
+        <action
+            android:id="@+id/action_FirstFragment_to_SecondFragment"
+            app:destination="@id/navigation_beta"
+            app:popUpTo="@id/nav_host_fragment_activity_main"
+            app:popUpToInclusive="false" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_beta"
+        android:name="edu.chapman.monsutauoka.ui.second.BetaFragment"
+        android:label="@string/title_second"
+        tools:layout="@layout/fragment_beta" />
+
+    <fragment
+        android:id="@+id/navigation_gamma"
+        android:name="edu.chapman.monsutauoka.ui.third.GammaFragment"
+        android:label="@string/title_third"
+        tools:layout="@layout/fragment_gamma" />
+
+</navigation>
