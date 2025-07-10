@@ -9,15 +9,7 @@
         android:id="@+id/navigation_alpha"
         android:name="edu.chapman.monsutauoka.ui.first.AlphaFragment"
         android:label="@string/title_first"
-        tools:layout="@layout/fragment_alpha">
-
-        <action
-            android:id="@+id/action_FirstFragment_to_SecondFragment"
-            app:destination="@id/navigation_beta"
-            app:popUpTo="@id/nav_host_fragment_activity_main"
-            app:popUpToInclusive="false" />
-
-    </fragment>
+        tools:layout="@layout/fragment_alpha" />
 
     <fragment
         android:id="@+id/navigation_beta"
