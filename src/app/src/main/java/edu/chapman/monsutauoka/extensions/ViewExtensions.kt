@@ -1,3 +1,5 @@
+package edu.chapman.monsutauoka.extensions
+
 import android.view.View
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat

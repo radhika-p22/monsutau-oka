@@ -1,8 +1,6 @@
 package edu.chapman.monsutauoka
 
-import android.Manifest
 import android.content.SharedPreferences
-import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -17,8 +15,13 @@ import androidx.navigation.ui.setupWithNavController
 import edu.chapman.monsutauoka.databinding.ActivityMainBinding
 import edu.chapman.monsutauoka.extensions.TAG
 import android.widget.Toast
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
 interface DataStore {
 
@@ -39,27 +42,28 @@ class SharedPreferencesDataStore (val prefs: SharedPreferences) : DataStore {
 }
 
 class StepCounterService(val dataStore: DataStore) {
-
     private val _key: String
-    private var _steps: Float
-    private var initialCount: Float? = null
 
-    val steps: Float
-        get() = _steps
+    private var _previousCount: Float? = null
+
+    private val _steps = MutableStateFlow(0f)
+    val steps: StateFlow<Float> = _steps
 
     init {
         _key = "${this::class.simpleName}.${::steps.name}" // "StepCounterService.steps"
-        _steps = dataStore.load(_key)?.toFloatOrNull() ?: 0f
+        _steps.value = dataStore.load(_key)?.toFloatOrNull() ?: 0f
     }
 
     fun updateSteps(newCount: Float) {
-        if (initialCount == null) {
-            initialCount = newCount
+        if (_previousCount == null) {
+            _previousCount = newCount
             return
         }
 
-        _steps += newCount - initialCount!!
-        dataStore.save(_key, _steps.toString())
+        _steps.value += newCount - _previousCount!!
+        _previousCount = newCount
+
+        dataStore.save(_key, _steps.value.toString())
     }
 }
 
@@ -67,83 +71,97 @@ class SharedViewModel {
 
 }
 
-interface StepCounterManager {
+interface StepSensorManager {
     fun onResume()
     fun onPause()
 }
 
-class MockStepCounterManager(val mainActivity: MainActivity) : StepCounterManager {
-    override fun onResume() {
+class MockStepSensorManager(val mainActivity: MainActivity) : StepSensorManager {
+    private var stepCount: Float = 0f
 
+    init {
+        mainActivity.lifecycleScope.launch {
+            mainActivity.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                while (true) {
+                    delay(1000L) // wait 1 second
+                    mainActivity.updateSteps(stepCount++)
+                }
+            }
+        }
+    }
+
+    override fun onResume() {
     }
 
     override fun onPause() {
     }
 }
 
-class SensorStepCounterManager(
+class RealStepSensorManager(
     val mainActivity: MainActivity,
     val sensorManager: SensorManager,
     val stepCounterSensor: Sensor
-) : StepCounterManager, SensorEventListener {
+) : StepSensorManager, SensorEventListener {
 
     override fun onResume() {
-        sensorManager.registerListener(mainActivity, stepCounterSensor, SensorManager.SENSOR_DELAY_UI)
+        sensorManager.registerListener(this, stepCounterSensor, SensorManager.SENSOR_DELAY_UI)
     }
 
     override fun onPause() {
-        sensorManager.unregisterListener(mainActivity)
+        sensorManager.unregisterListener(this)
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
+        if (event == null) {
+            return
+        }
+
         if (event.sensor.type != Sensor.TYPE_STEP_COUNTER) {
             return
         }
 
         val count = event.values[0]
-        stepCounterService.updateSteps(count)
-        Log.v(TAG, count.toString())
+        mainActivity.updateSteps(count)
     }
 
     // We have to implement this function to meet the sensor event listener interface;
     // however we don't care about accuracy, so we can simply ignore this event
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-
     }
 }
 
-class MainActivity : AppCompatActivity(), SensorEventListener {
+class MainActivity : AppCompatActivity() {
+
+
 
     private lateinit var stepCounterService: StepCounterService
-    private lateinit var sensorManager: SensorManager
-    private lateinit var stepCounterSensor: Sensor
+    private lateinit var stepSensorManager: StepSensorManager
     private lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        setupSensors()
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        setupSensors()
         setupNav()
     }
 
     fun setupSensors() {
 
         // We know that we have permissions because the entry activity should have asserted that
-        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
-
+        val sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
         val sensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
 
-        if (sensor == null) {
-            Toast.makeText(this, "No step counter sensor!", Toast.LENGTH_SHORT).show()
-            finish()
-            return
+        if (sensor != null) {
+            stepSensorManager = RealStepSensorManager(this, sensorManager, sensor)
+        } else {
+            Toast.makeText(this, "Using MOCK Step Counter", Toast.LENGTH_SHORT).show()
+            stepSensorManager = MockStepSensorManager(this)
         }
 
-        // AHHHHHH
-        stepCounterSensor = sensor
 
         val sharedPreferences = getSharedPreferences(this::class.simpleName, MODE_PRIVATE)
         val dataStore = SharedPreferencesDataStore(sharedPreferences)
@@ -170,31 +188,20 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     override fun onResume() {
         super.onResume()
-        sensorManager.registerListener(this, stepCounterSensor, SensorManager.SENSOR_DELAY_UI)
+        stepSensorManager.onResume()
     }
 
     override fun onPause() {
         super.onPause()
-        sensorManager.unregisterListener(this)
-    }
-
-    override fun onSensorChanged(event: SensorEvent) {
-        if (event.sensor.type != Sensor.TYPE_STEP_COUNTER) {
-            return
-        }
-
-        val count = event.values[0]
-        stepCounterService.updateSteps(count)
-        Log.v(TAG, count.toString())
-    }
-
-    // We have to implement this function to meet the sensor event listener interface;
-    // however we don't care about accuracy, so we can simply ignore this event
-    override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
+        stepSensorManager.onPause()
     }
 
     fun updateSteps(newStepCount: Float) {
         stepCounterService.updateSteps(newStepCount)
         Log.v(TAG, newStepCount.toString())
+    }
+
+    fun getStepCounterService(): StepCounterService {
+        return stepCounterService
     }
 }

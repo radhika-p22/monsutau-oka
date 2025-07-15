@@ -16,10 +16,12 @@ class EntryActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        /*
         if (hasPermission) {
             goToMainActivity()
             return
         }
+        // */
 
         binding = ActivityEntryBinding.inflate(layoutInflater)
         setContentView(binding.root)
