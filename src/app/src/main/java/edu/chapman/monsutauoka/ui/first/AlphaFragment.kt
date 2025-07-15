@@ -7,10 +7,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import applySystemBarPadding
+import edu.chapman.monsutauoka.SharedViewModel
 import edu.chapman.monsutauoka.databinding.FragmentAlphaBinding
 import edu.chapman.monsutauoka.extensions.BaseListAdapter
 import edu.chapman.monsutauoka.extensions.TAG
@@ -20,6 +22,8 @@ class AlphaFragment : Fragment() {
 
     private var _binding: FragmentAlphaBinding? = null
     private val binding get() = _binding!!
+
+    private val sharedViewModel: SharedViewModel by activityViewModels()
 
     // This is new, 1 of 4!
     private val viewModel: PersonViewModel by viewModels()
