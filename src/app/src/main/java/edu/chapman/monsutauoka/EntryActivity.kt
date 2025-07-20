@@ -4,16 +4,19 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import edu.chapman.monsutauoka.databinding.ActivityEntryBinding
+import edu.chapman.monsutauoka.extensions.TAG
 
 class EntryActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityEntryBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        Log.i(TAG, "onCreate")
         super.onCreate(savedInstanceState)
 
         if (hasPermission) {
@@ -48,6 +51,7 @@ class EntryActivity : AppCompatActivity() {
         }
 
     fun goToMainActivity() {
+        Log.i(TAG, ::goToMainActivity.name)
         val intent = Intent(this, MainActivity::class.java)
         startActivity(intent)
         finish()

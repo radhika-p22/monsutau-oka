@@ -5,27 +5,26 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import edu.chapman.monsutauoka.databinding.FragmentGammaBinding
 import edu.chapman.monsutauoka.extensions.TAG
+import edu.chapman.monsutauoka.ui.GenericViewModelFactory
+import edu.chapman.monsutauoka.ui.MainFragmentBase
+import edu.chapman.monsutauoka.ui.first.AlphaViewModel
 
-class GammaFragment : Fragment() {
+class GammaFragment : MainFragmentBase<FragmentGammaBinding>() {
 
-    private var _binding: FragmentGammaBinding? = null
-    private val binding get() = _binding!!
+    private val viewModel: GammaViewModel by viewModels {
+        GenericViewModelFactory {
+            GammaViewModel()
+        }
+    }
 
-    private val viewModel: GammaViewModel by viewModels()
-
-    override fun onCreateView(
+    override fun createViewBinding(
         inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        Log.d(TAG, ::onCreateView.name)
-
-        _binding = FragmentGammaBinding.inflate(inflater, container, false)
-        return binding.root
+        container: ViewGroup?
+    ): FragmentGammaBinding {
+        return FragmentGammaBinding.inflate(inflater, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -42,12 +41,5 @@ class GammaFragment : Fragment() {
         viewModel.num.observe(viewLifecycleOwner) { numValue ->
             binding.textGamma.text = numValue.toString()
         }
-    }
-
-    override fun onDestroyView() {
-        Log.d(TAG, ::onDestroyView.name)
-
-        super.onDestroyView()
-        _binding = null
     }
 }

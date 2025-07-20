@@ -19,14 +19,17 @@ import edu.chapman.monsutauoka.services.StepCounterService
 import edu.chapman.monsutauoka.services.sensors.StepSensorManager
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var stepCounterService: StepCounterService
+    lateinit var stepCounterService: StepCounterService
+
     private lateinit var stepSensorManager: StepSensorManager
     private lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        Log.i(TAG, "onCreate")
         super.onCreate(savedInstanceState)
 
         setupSensors()
+        setupStepCounter()
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -45,8 +48,9 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "Using MOCK Step Counter", Toast.LENGTH_SHORT).show()
             stepSensorManager = MockStepSensorManager(this)
         }
+    }
 
-
+    fun setupStepCounter() {
         val sharedPreferences = getSharedPreferences(this::class.simpleName, MODE_PRIVATE)
         val dataStore = SharedPreferencesDataStore(sharedPreferences)
         stepCounterService = StepCounterService(dataStore)
@@ -71,21 +75,19 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onResume() {
+        Log.i(TAG, ::onResume.name)
         super.onResume()
         stepSensorManager.onResume()
     }
 
     override fun onPause() {
+        Log.i(TAG, ::onPause.name)
         super.onPause()
         stepSensorManager.onPause()
     }
 
     fun updateSteps(newStepCount: Float) {
-        stepCounterService.updateSteps(newStepCount)
         Log.v(TAG, newStepCount.toString())
-    }
-
-    fun getStepCounterService(): StepCounterService {
-        return stepCounterService
+        stepCounterService.updateSteps(newStepCount)
     }
 }

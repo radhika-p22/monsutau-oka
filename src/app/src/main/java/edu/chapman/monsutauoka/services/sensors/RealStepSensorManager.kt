@@ -4,7 +4,9 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.util.Log
 import edu.chapman.monsutauoka.MainActivity
+import edu.chapman.monsutauoka.extensions.TAG
 
 class RealStepSensorManager(
     val mainActivity: MainActivity,
@@ -22,10 +24,12 @@ class RealStepSensorManager(
 
     override fun onSensorChanged(event: SensorEvent?) {
         if (event == null) {
+            Log.w(TAG, "onSensorChanged was null????? WAT?????")
             return
         }
 
         if (event.sensor.type != Sensor.TYPE_STEP_COUNTER) {
+            Log.w(TAG, "onSensorChanged was ${event.sensor.type}??? WAT????")
             return
         }
 

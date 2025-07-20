@@ -5,24 +5,17 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.fragment.app.Fragment
 import edu.chapman.monsutauoka.databinding.FragmentBetaBinding
 import edu.chapman.monsutauoka.extensions.TAG
+import edu.chapman.monsutauoka.ui.MainFragmentBase
 
-class BetaFragment : Fragment() {
+class BetaFragment : MainFragmentBase<FragmentBetaBinding>() {
 
-    private var _binding: FragmentBetaBinding? = null
-    private val binding get() = _binding!!
-
-    override fun onCreateView(
+    override fun createViewBinding(
         inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        Log.d(TAG, ::onCreateView.name)
-
-        _binding = FragmentBetaBinding.inflate(inflater, container, false)
-        return binding.root
+        container: ViewGroup?
+    ): FragmentBetaBinding {
+        return FragmentBetaBinding.inflate(inflater, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -39,12 +32,5 @@ class BetaFragment : Fragment() {
             i++
             binding.textBeta.text = i.toString()
         }
-    }
-
-    override fun onDestroyView() {
-        Log.d(TAG, ::onDestroyView.name)
-
-        super.onDestroyView()
-        _binding = null
     }
 }
