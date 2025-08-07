@@ -8,8 +8,31 @@ import android.view.ViewGroup
 import edu.chapman.monsutauoka.databinding.FragmentBetaBinding
 import edu.chapman.monsutauoka.extensions.TAG
 import edu.chapman.monsutauoka.ui.MainFragmentBase
+import android.os.Handler
+import android.os.Looper
+import android.content.Context
+
 
 class BetaFragment : MainFragmentBase<FragmentBetaBinding>() {
+
+    private var happinessLevel = 15
+    private val maxHappiness = 20
+    private val minHappiness = 1
+    private val happinessDecayIntervalMillis = 60_000L // 60 seconds
+    private val PREF_NAME = "pet_prefs"
+    private val PREF_KEY_HAPPINESS = "happiness_level"
+
+
+    private val handler = Handler(Looper.getMainLooper())
+    private val happinessDecayRunnable = object : Runnable {
+        override fun run() {
+            if (happinessLevel > minHappiness) {
+                happinessLevel--
+                updateHappinessDisplay()
+            }
+            handler.postDelayed(this, happinessDecayIntervalMillis)
+        }
+    }
 
     override fun createViewBinding(
         inflater: LayoutInflater,
@@ -19,18 +42,26 @@ class BetaFragment : MainFragmentBase<FragmentBetaBinding>() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         Log.d(TAG, ::onViewCreated.name)
 
-        binding.buttonDecrement.setOnClickListener {
-            var i = binding.textBeta.text.toString().toIntOrNull() ?: 0
-            i--
-            binding.textBeta.text = i.toString()
-        }
-
-        binding.buttonIncrement.setOnClickListener {
-            var i = binding.textBeta.text.toString().toIntOrNull() ?: 0
-            i++
-            binding.textBeta.text = i.toString()
-        }
+        updateHappinessDisplay() // show starting value
+        handler.postDelayed(happinessDecayRunnable, happinessDecayIntervalMillis) // begin countdown
     }
+
+    private fun updateHappinessDisplay() {
+        binding.textHappinessValue.text = "$happinessLevel/$maxHappiness"
+        saveHappinessLevel()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        handler.removeCallbacks(happinessDecayRunnable) // clean up!
+    }
+
+    private fun saveHappinessLevel() {
+        val prefs = requireContext().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putInt(PREF_KEY_HAPPINESS, happinessLevel).apply()
+    }
+
 }

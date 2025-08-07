@@ -1,17 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:gravity="center"
     android:orientation="vertical">
-
-    <TextView
-        android:id="@+id/text_beta"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:padding="16dp"
-        android:text="@string/_0"
-        android:textSize="24sp" />
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -19,20 +13,26 @@
         android:gravity="center"
         android:orientation="horizontal">
 
-        <Button
-            android:id="@+id/button_decrement"
+        <ImageView
+            android:id="@+id/monsterimageView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:srcCompat="@tools:sample/avatars" />
+
+        <TextView
+            android:id="@+id/text_beta"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/decrement"
-            android:layout_margin="@dimen/activity_horizontal_margin" />
+            android:padding="16dp"
+            android:text="Happiness:"
+            android:textSize="24sp" />
 
-        <Button
-            android:id="@+id/button_increment"
+        <TextView
+            android:id="@+id/textHappinessValue"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/increment"
-            android:layout_margin="@dimen/activity_horizontal_margin" />
-
+            android:layout_weight="1"
+            android:text="1/20" />
     </LinearLayout>
 
 </LinearLayout>
