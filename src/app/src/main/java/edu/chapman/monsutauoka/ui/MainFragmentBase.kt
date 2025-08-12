@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.viewbinding.ViewBinding
 import edu.chapman.monsutauoka.MainActivity
+import edu.chapman.monsutauoka.databinding.FragmentAlphaBinding
 import edu.chapman.monsutauoka.extensions.TAG
 
 abstract class MainFragmentBase<T : ViewBinding> : Fragment() {
