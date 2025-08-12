@@ -5,14 +5,6 @@
     android:gravity="center"
     android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/text_beta"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:padding="16dp"
-        android:text="@string/_0"
-        android:textSize="24sp" />
-
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -20,17 +12,17 @@
         android:orientation="horizontal">
 
         <Button
-            android:id="@+id/button_decrement"
+            android:id="@+id/button_schedule"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/decrement"
+            android:text="Schedule"
             android:layout_margin="@dimen/activity_horizontal_margin" />
 
         <Button
-            android:id="@+id/button_increment"
+            android:id="@+id/button_cancel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/increment"
+            android:text="Cancel"
             android:layout_margin="@dimen/activity_horizontal_margin" />
 
     </LinearLayout>

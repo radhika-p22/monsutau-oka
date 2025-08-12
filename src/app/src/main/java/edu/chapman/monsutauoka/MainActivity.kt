@@ -1,5 +1,6 @@
 package edu.chapman.monsutauoka
 
+import android.content.Intent
 import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.os.Bundle
@@ -35,6 +36,24 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         setupNav()
+
+        handleNavigationIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        Log.i(TAG, "onNewIntent")
+        super.onNewIntent(intent)
+
+        handleNavigationIntent(intent)
+    }
+
+    private fun handleNavigationIntent(intent: Intent?) {
+
+        val hello = intent?.getStringExtra("hello") ?: return
+
+        val index = if (hello == "world") R.id.navigation_gamma else R.id.navigation_beta
+
+        binding.navView.selectedItemId = index
     }
 
     fun setupSensors() {
@@ -87,7 +106,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun updateSteps(newStepCount: Float) {
-        Log.v(TAG, newStepCount.toString())
+        //Log.v(TAG, newStepCount.toString())
         stepCounterService.updateSteps(newStepCount)
     }
 }
