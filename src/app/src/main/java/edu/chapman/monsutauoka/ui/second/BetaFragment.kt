@@ -85,18 +85,6 @@ class BetaFragment : MainFragmentBase<FragmentBetaBinding>() {
 
     private fun updateHappinessDisplay() {
         binding.textHappinessValue.text = "$happinessLevel/$maxHappiness"
-        updateMoodImage(happinessLevel)
-    }
-
-    private fun updateMoodImage(level: Int) {
-        val resId = when {
-            level <= 3  -> R.drawable.pet_mood_1       // very sad
-            level <= 8  -> R.drawable.pet_mood_2       // sad
-            level <= 12 -> R.drawable.pet_mood_3       // neutral
-            level <= 16 -> R.drawable.pet_mood_4       // happy
-            else        -> R.drawable.pet_mood_5       // very happy
-        }
-        binding.imageOverlay.setImageResource(resId)
     }
 
     override fun onPause() {
