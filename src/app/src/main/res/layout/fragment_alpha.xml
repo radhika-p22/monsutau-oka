@@ -1,11 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
     android:fitsSystemWindows="true"
     android:padding="24dp">
+
+    <!-- BIG background image holder -->
+    <ImageView
+        android:id="@+id/image_background"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:contentDescription="Background_image"
+        android:scaleType="centerCrop"
+        android:src="@drawable/grassbackgroundpokemon"
+        app:layout_constraintBottom_toBottomOf="@+id/image_overlay"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:src="@tools:sample/backgrounds/scenic" />
+
+    <!-- Secondary/overlay image holder near the bottom of the background -->
+    <ImageView
+        android:id="@+id/image_overlay"
+        android:layout_width="220dp"
+        android:layout_height="220dp"
+        android:adjustViewBounds="true"
+        android:scaleType="centerInside"
+        android:contentDescription="Monster_image"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/text_steps"
+        android:layout_marginBottom="48dp"
+        tools:src="@tools:sample/avatars[3]" />
+
 
     <TextView
         android:id="@+id/text_steps"
@@ -14,9 +43,10 @@
         android:text="Steps"
         android:textSize="18sp"
         android:textAlignment="center"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginBottom="24dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

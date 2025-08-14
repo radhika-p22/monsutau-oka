@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.viewModels
+import edu.chapman.monsutauoka.R
 import edu.chapman.monsutauoka.databinding.FragmentAlphaBinding
 import edu.chapman.monsutauoka.extensions.TAG
 import edu.chapman.monsutauoka.extensions.applySystemBarPadding
@@ -18,14 +19,16 @@ class AlphaFragment : MainFragmentBase<FragmentAlphaBinding>() {
     private val PREF_NAME = "pet_prefs"
     private val PREF_KEY_TREATS = "treat_count"
     private val PREF_KEY_TREAT_PROGRESS = "treat_progress"
-    private val STEPS_PER_TREAT = 5
+    private val STEPS_PER_TREAT = 60
+
+    private val PREF_KEY_HAPPINESS = "happiness_level"
+
+    private var lastSteps: Int? = null
 
 
     private val viewModel: AlphaViewModel by viewModels {
         GenericViewModelFactory { AlphaViewModel(mainActivity.stepCounterService) }
     }
-
-    private var lastSteps: Int? = null
 
     override fun createViewBinding(
         inflater: LayoutInflater,
@@ -35,6 +38,7 @@ class AlphaFragment : MainFragmentBase<FragmentAlphaBinding>() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         Log.d(TAG, ::onViewCreated.name)
         binding.root.applySystemBarPadding()
+//        updateMoodImageFromPrefs()
 
         viewModel.steps.observe(viewLifecycleOwner) { value: Float ->
             val current = value.toInt()               // convert Float -> Int (whole steps)
@@ -49,6 +53,7 @@ class AlphaFragment : MainFragmentBase<FragmentAlphaBinding>() {
                 // if delta <= 0 (sensor reset/duplicate), ignore
             }
             lastSteps = current
+//            updateMoodImageFromPrefs()
         }
     }
 
@@ -66,4 +71,28 @@ class AlphaFragment : MainFragmentBase<FragmentAlphaBinding>() {
             .putInt(PREF_KEY_TREAT_PROGRESS, newProgress)
             .apply()
     }
+
+//    private fun updateMoodImageFromPrefs() {
+//        val prefs = requireContext().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+//        val level = prefs.getInt(PREF_KEY_HAPPINESS, 15) // default if not set yet
+//        updateMoodImage(level)
+//    }
+
+//    private fun updateMoodImage(level: Int) {
+//        // thresholds: <=3, <=8, <=12, <=16, else
+//        val resId = when {
+//            level <= 3  -> R.drawable.pet_mood_1   // very sad
+//            level <= 8  -> R.drawable.pet_mood_2   // sad
+//            level <= 12 -> R.drawable.pet_mood_3   // neutral
+//            level <= 16 -> R.drawable.pet_mood_4   // happy
+//            else        -> R.drawable.pet_mood_5   // very happy
+//        }
+//        binding.imageOverlay.setImageResource(resId)
+//    }
+
+//    override fun onResume() {
+//        super.onResume()
+//        updateMoodImageFromPrefs() // refresh when coming back from Beta
+//    }
+
 }
