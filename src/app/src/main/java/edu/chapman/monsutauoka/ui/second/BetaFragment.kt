@@ -24,6 +24,9 @@ class BetaFragment : MainFragmentBase<FragmentBetaBinding>() {
     private val maxHappiness = 20
     private val minHappiness = 1
     private val happinessDecayIntervalMillis = 60_000L // 60 seconds
+    private val PREF_KEY_FEED_PROGRESS = "feed_progress"   // 0..4 treats spent toward +1 happiness
+    private val TREATS_PER_HAPPINESS = 5
+
 
     private val PREF_NAME = "pet_prefs"
     private val PREF_KEY_HAPPINESS = "happiness_level"
@@ -62,6 +65,10 @@ class BetaFragment : MainFragmentBase<FragmentBetaBinding>() {
         }
         binding.buttonCancel.setOnClickListener {
             cancelNotification(mainActivity)
+        }
+
+        binding.buttonFeed.setOnClickListener {
+            feedPet()
         }
 
         super.onViewCreated(view, savedInstanceState)
@@ -105,6 +112,43 @@ class BetaFragment : MainFragmentBase<FragmentBetaBinding>() {
             .putLong(PREF_KEY_LAST_UPDATE, System.currentTimeMillis())
             .apply()
     }
+
+    private fun feedPet() {
+        val prefs = requireContext().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+
+        var treats = prefs.getInt(PREF_KEY_TREATS, 0)
+        if (treats <= 0) {
+            Toast.makeText(requireContext(), "No treats left!", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // Spend one treat
+        treats--
+
+        // Track how many treats have been spent toward the next happiness point
+        var feedProgress = prefs.getInt(PREF_KEY_FEED_PROGRESS, 0) + 1
+        if (feedProgress >= TREATS_PER_HAPPINESS) {
+            feedProgress = 0
+            if (happinessLevel < maxHappiness) {
+                happinessLevel += 1
+                updateHappinessDisplay()  // updates the text and persists via saveHappinessLevel()
+                saveHappinessLevel()      // also refreshes last-update timestamp
+            }
+        } else {
+            // If happiness didn't change, still persist the current happiness timestamp
+            saveHappinessLevel()
+        }
+
+        // Persist treats and feed progress
+        prefs.edit()
+            .putInt(PREF_KEY_TREATS, treats)
+            .putInt(PREF_KEY_FEED_PROGRESS, feedProgress)
+            .apply()
+
+        // Refresh UI
+        updateTreatsDisplay()
+    }
+
 
     fun scheduleNotification(context: Context) {
         val pendingIntent = createPendingIntent(context)
