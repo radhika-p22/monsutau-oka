@@ -19,7 +19,7 @@ class AlphaFragment : MainFragmentBase<FragmentAlphaBinding>() {
     private val PREF_NAME = "pet_prefs"
     private val PREF_KEY_TREATS = "treat_count"
     private val PREF_KEY_TREAT_PROGRESS = "treat_progress"
-    private val STEPS_PER_TREAT = 60
+    private val STEPS_PER_TREAT = 15
 
     private val PREF_KEY_HAPPINESS = "happiness_level"
 
@@ -72,27 +72,27 @@ class AlphaFragment : MainFragmentBase<FragmentAlphaBinding>() {
             .apply()
     }
 
-//    private fun updateMoodImageFromPrefs() {
-//        val prefs = requireContext().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-//        val level = prefs.getInt(PREF_KEY_HAPPINESS, 15) // default if not set yet
-//        updateMoodImage(level)
-//    }
+    private fun updateMoodImageFromPrefs() {
+        val prefs = requireContext().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        val level = prefs.getInt(PREF_KEY_HAPPINESS, 15) // default if not set yet
+        updateMoodImage(level)
+    }
 
-//    private fun updateMoodImage(level: Int) {
-//        // thresholds: <=3, <=8, <=12, <=16, else
-//        val resId = when {
-//            level <= 3  -> R.drawable.pet_mood_1   // very sad
-//            level <= 8  -> R.drawable.pet_mood_2   // sad
-//            level <= 12 -> R.drawable.pet_mood_3   // neutral
-//            level <= 16 -> R.drawable.pet_mood_4   // happy
-//            else        -> R.drawable.pet_mood_5   // very happy
-//        }
-//        binding.imageOverlay.setImageResource(resId)
-//    }
+    private fun updateMoodImage(level: Int) {
+        // thresholds: <=3, <=8, <=12, <=16, else
+        val resId = when {
+            level <= 3  -> R.drawable.pikachu_angry  // very angry
+            level <= 8  -> R.drawable.pikachu_worried  // sad
+            level <= 12 -> R.drawable.pikachu_normal   // neutral
+            level <= 16 -> R.drawable.pikachu_content  // happy
+            else        -> R.drawable.pikachu_happy   // very happy
+        }
+        binding.imageOverlay.setImageResource(resId)
+    }
 
-//    override fun onResume() {
-//        super.onResume()
-//        updateMoodImageFromPrefs() // refresh when coming back from Beta
-//    }
+    override fun onResume() {
+        super.onResume()
+        updateMoodImageFromPrefs() // refresh when coming back from Beta
+    }
 
 }
