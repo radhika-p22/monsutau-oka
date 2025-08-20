@@ -16,25 +16,33 @@ import edu.chapman.monsutauoka.ui.MainFragmentBase
 
 class AlphaFragment : MainFragmentBase<FragmentAlphaBinding>() {
 
+    // SharedPreferences file & keys used to persist treats, progress toward next treat, and happiness.
     private val PREF_NAME = "pet_prefs"
     private val PREF_KEY_TREATS = "treat_count"
     private val PREF_KEY_TREAT_PROGRESS = "treat_progress"
-    private val STEPS_PER_TREAT = 15
+    private val STEPS_PER_TREAT = 15                      // every 15 steps -> +1 treat
 
-    private val PREF_KEY_HAPPINESS = "happiness_level"
+    private val PREF_KEY_HAPPINESS = "happiness_level"    // read-only here, written in Beta
 
+    // We remember the previous step reading so we can compute how many new steps happened (the delta).
     private var lastSteps: Int? = null
 
-
+    // ViewModel exposes a LiveData of step counts (Float from the sensor).
     private val viewModel: AlphaViewModel by viewModels {
         GenericViewModelFactory { AlphaViewModel(mainActivity.stepCounterService) }
     }
 
+    /** Inflates the view binding for Alpha (wires this fragment to fragment_alpha.xml). */
     override fun createViewBinding(
         inflater: LayoutInflater,
         container: ViewGroup?
     ) = FragmentAlphaBinding.inflate(inflater, container, false)
 
+    /**
+     * Sets up the UI padding and starts observing step updates.
+     * Each new step value is shown on screen; we compute the delta since the last value and
+     * convert those steps into treats (persisted via SharedPreferences).
+     */
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         Log.d(TAG, ::onViewCreated.name)
         binding.root.applySystemBarPadding()
@@ -57,6 +65,10 @@ class AlphaFragment : MainFragmentBase<FragmentAlphaBinding>() {
         }
     }
 
+    /**
+     * Adds the given number of steps toward earning treats.
+     * We accumulate progress and every STEPS_PER_TREAT steps, we add +1 treat and persist both values.
+     */
     private fun addStepsTowardTreat(context: Context, steps: Int) {
         val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
         val treats = prefs.getInt(PREF_KEY_TREATS, 0)
@@ -72,12 +84,20 @@ class AlphaFragment : MainFragmentBase<FragmentAlphaBinding>() {
             .apply()
     }
 
+    /**
+     * Reads the current happiness level from SharedPreferences and updates the monster image.
+     * (Happiness is maintained on the Beta screen; Alpha only displays it.)
+     */
     private fun updateMoodImageFromPrefs() {
         val prefs = requireContext().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
         val level = prefs.getInt(PREF_KEY_HAPPINESS, 15) // default if not set yet
         updateMoodImage(level)
     }
 
+    /**
+     * Switches the overlay image based on happiness ranges:
+     * <=3 angry, <=8 worried, <=12 normal, <=16 content, else happy.
+     */
     private fun updateMoodImage(level: Int) {
         // thresholds: <=3, <=8, <=12, <=16, else
         val resId = when {
@@ -90,9 +110,11 @@ class AlphaFragment : MainFragmentBase<FragmentAlphaBinding>() {
         binding.imageOverlay.setImageResource(resId)
     }
 
+    /**
+     * When returning to the Alpha screen, refresh the mood image in case happiness changed in Beta.
+     */
     override fun onResume() {
         super.onResume()
         updateMoodImageFromPrefs() // refresh when coming back from Beta
     }
-
 }

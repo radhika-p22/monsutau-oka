@@ -25,8 +25,7 @@ class BetaFragment : MainFragmentBase<FragmentBetaBinding>() {
     private val minHappiness = 1
     private val happinessDecayIntervalMillis = 60_000L // 60 seconds
     private val PREF_KEY_FEED_PROGRESS = "feed_progress"   // 0..4 treats spent toward +1 happiness
-    private val TREATS_PER_HAPPINESS = 5
-
+    private val TREATS_PER_HAPPINESS = 2
 
     private val PREF_NAME = "pet_prefs"
     private val PREF_KEY_HAPPINESS = "happiness_level"
@@ -34,7 +33,16 @@ class BetaFragment : MainFragmentBase<FragmentBetaBinding>() {
     private val PREF_KEY_TREATS = "treat_count"
     private val PREF_KEY_TREAT_PROGRESS = "treat_progress"
 
+    // Notification constants (action string + request code + threshold)
+    companion object {
+        private const val ACTION_LOW_HAPPINESS = "edu.chapman.monsutauoka.action.LOW_HAPPINESS"
+        private const val NOTIF_REQ_CODE = 1001
+        private const val LOW_HAPPINESS_THRESHOLD = 3
+    }
+
     private val handler = Handler(Looper.getMainLooper())
+
+    // Minute-by-minute decay: every tick lowers happiness (down to min), saves it, updates UI, then re-posts itself.
     private val happinessDecayRunnable = object : Runnable {
         override fun run() {
             if (happinessLevel > minHappiness) {
@@ -46,9 +54,11 @@ class BetaFragment : MainFragmentBase<FragmentBetaBinding>() {
         }
     }
 
+    // Convenience getter for the system AlarmManager used to schedule/cancel the notification alarm.
     val alarmManager
         get() = mainActivity.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
+    /** Inflates the view binding for this fragment (hooking up to fragment_beta.xml). */
     override fun createViewBinding(
         inflater: LayoutInflater,
         container: ViewGroup?
@@ -56,17 +66,19 @@ class BetaFragment : MainFragmentBase<FragmentBetaBinding>() {
         return FragmentBetaBinding.inflate(inflater, container, false)
     }
 
+    /**
+     * Sets up click handlers, loads saved happiness, applies any "missed" decay while away,
+     * updates UI, and starts the recurring 60s decay timer.
+     */
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         Log.d(TAG, ::onViewCreated.name)
 
         binding.buttonSchedule.setOnClickListener {
             scheduleNotification(mainActivity)
-
         }
         binding.buttonCancel.setOnClickListener {
             cancelNotification(mainActivity)
         }
-
         binding.buttonFeed.setOnClickListener {
             feedPet()
         }
@@ -76,7 +88,7 @@ class BetaFragment : MainFragmentBase<FragmentBetaBinding>() {
         val prefs = requireContext().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
         happinessLevel = prefs.getInt(PREF_KEY_HAPPINESS, happinessLevel).coerceIn(minHappiness, maxHappiness)
 
-        // 2) Optional: apply decay that should’ve happened while away
+        // Apply decay that would have happened while the screen was not visible.
         val lastUpdate = prefs.getLong(PREF_KEY_LAST_UPDATE, 0L)
         if (lastUpdate > 0L) {
             val elapsed = System.currentTimeMillis() - lastUpdate
@@ -85,26 +97,51 @@ class BetaFragment : MainFragmentBase<FragmentBetaBinding>() {
                 happinessLevel = (happinessLevel - minutesElapsed).coerceAtLeast(minHappiness)
             }
         }
+
         updateHappinessDisplay()
         updateTreatsDisplay()
         handler.postDelayed(happinessDecayRunnable, happinessDecayIntervalMillis)
     }
 
+    /** Updates the "X/20" happiness text and swaps the monster image to match the current range. */
     private fun updateHappinessDisplay() {
         binding.textHappinessValue.text = "$happinessLevel/$maxHappiness"
+        updateMoodImage(happinessLevel)
     }
 
+    /** Chooses which drawable to show based on happiness (<=3, <=8, <=12, <=16, else). */
+    private fun updateMoodImage(level: Int) {
+        val resId = when {
+            level <= 3  -> R.drawable.pikachu_angry
+            level <= 8  -> R.drawable.pikachu_worried
+            level <= 12 -> R.drawable.pikachu_normal
+            level <= 16 -> R.drawable.pikachu_content
+            else        -> R.drawable.pikachu_happy
+        }
+        binding.monsterimageView.setImageResource(resId)
+    }
+
+    /** Persists the latest happiness/timestamp when the fragment is paused. */
     override fun onPause() {
         super.onPause()
         saveHappinessLevel() // make sure the most recent values are persisted
     }
 
+    /** When returning to this screen, refresh treats and happiness/mood display. */
+    override fun onResume() {
+        super.onResume()
+        updateTreatsDisplay() // refresh when returning from Alpha or Gamma
+        updateHappinessDisplay()
+    }
+
+    /** Stops the decay timer and saves happiness once more to avoid double timers or stale data. */
     override fun onDestroyView() {
         super.onDestroyView()
         handler.removeCallbacks(happinessDecayRunnable) // avoid leaks / double timers
         saveHappinessLevel()
     }
 
+    /** Writes happiness value and "last updated" timestamp to SharedPreferences. */
     private fun saveHappinessLevel() {
         val prefs = requireContext().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
         prefs.edit()
@@ -113,6 +150,17 @@ class BetaFragment : MainFragmentBase<FragmentBetaBinding>() {
             .apply()
     }
 
+    /** Reads the current treat count from SharedPreferences and displays it. */
+    private fun updateTreatsDisplay() {
+        val prefs = requireContext().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        val treats = prefs.getInt(PREF_KEY_TREATS, 0)
+        binding.textTreatsValue.text = treats.toString()
+    }
+
+    /**
+     * Spends one treat (if any), tracks progress toward the next +1 happiness,
+     * adds happiness every TREATS_PER_HAPPINESS treats, then saves & refreshes UI.
+     */
     private fun feedPet() {
         val prefs = requireContext().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
 
@@ -131,8 +179,8 @@ class BetaFragment : MainFragmentBase<FragmentBetaBinding>() {
             feedProgress = 0
             if (happinessLevel < maxHappiness) {
                 happinessLevel += 1
-                updateHappinessDisplay()  // updates the text and persists via saveHappinessLevel()
-                saveHappinessLevel()      // also refreshes last-update timestamp
+                updateHappinessDisplay()  // updates the text and image
+                saveHappinessLevel()      // refreshes last-update timestamp
             }
         } else {
             // If happiness didn't change, still persist the current happiness timestamp
@@ -149,45 +197,73 @@ class BetaFragment : MainFragmentBase<FragmentBetaBinding>() {
         updateTreatsDisplay()
     }
 
-
+    /**
+     * Calculates when happiness will reach ≤3 (based on last update + 1/min decay),
+     * then schedules an alarm for that time (exact if permitted, otherwise inexact).
+     */
     fun scheduleNotification(context: Context) {
-        val pendingIntent = createPendingIntent(context)
+        // compute when happiness will hit <= 3
+        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        val lastUpdate = prefs.getLong(PREF_KEY_LAST_UPDATE, System.currentTimeMillis())
+        val decrementsNeeded = (happinessLevel - LOW_HAPPINESS_THRESHOLD).coerceAtLeast(0)
+        val targetTime = lastUpdate + decrementsNeeded * happinessDecayIntervalMillis
+        val triggerAt = maxOf(System.currentTimeMillis() + 1_000L, targetTime)
 
-        val triggerTime = System.currentTimeMillis() + 1000
+        val pi = createLowHappinessPendingIntent(context)
 
-        alarmManager.set(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
+        // cancel any existing alarm with the same PI
+        alarmManager.cancel(pi)
 
-        Toast.makeText(mainActivity, "Scheduled", Toast.LENGTH_SHORT).show()
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                // Android 12+: need SCHEDULE_EXACT_ALARM or exemption
+                if (alarmManager.canScheduleExactAlarms()) {
+                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pi)
+                } else {
+                    // fallback: inexact (won't crash)
+                    alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAt, pi)
+                    Toast.makeText(
+                        context,
+                        "Scheduled (approx). Enable exact alarms in Settings for precise timing.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pi)
+            } else {
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAt, pi)
+            }
+            Toast.makeText(context, "Notification scheduled", Toast.LENGTH_SHORT).show()
+        } catch (se: SecurityException) {
+            // Safety net if an OEM throws anyway
+            alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAt, pi)
+            Toast.makeText(
+                context,
+                "Scheduled (approx). Exact alarm permission not granted.",
+                Toast.LENGTH_LONG
+            ).show()
+        }
     }
 
+    /** Cancels the low-happiness alarm by recreating the same PendingIntent and passing it to AlarmManager.cancel(). */
     fun cancelNotification(context: Context) {
-        val pendingIntent = createPendingIntent(context)
-
-        alarmManager.cancel(pendingIntent)
-
-        Toast.makeText(mainActivity, "Cancelled", Toast.LENGTH_SHORT).show()
+        val pi = createLowHappinessPendingIntent(context)
+        alarmManager.cancel(pi)
+        Toast.makeText(context, "Notification cancelled", Toast.LENGTH_SHORT).show()
     }
 
-    fun createPendingIntent(context: Context): PendingIntent {
-        val intent = Intent(context, NotificationReceiver::class.java)
-
-        intent.putExtra("hello", "world")
-
+    /** Builds the unique PendingIntent that wakes NotificationReceiver when happiness is low (≤3). */
+    private fun createLowHappinessPendingIntent(context: Context): PendingIntent {
+        val intent = Intent(context, NotificationReceiver::class.java).apply {
+            action = ACTION_LOW_HAPPINESS
+            putExtra("title", "Your monster needs you!")
+            putExtra("text", "Happiness is low (≤ 3). Time to feed or play.")
+        }
         return PendingIntent.getBroadcast(
             context,
-            0,
+            NOTIF_REQ_CODE,
             intent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-    }
-    override fun onResume() {
-        super.onResume()
-        updateTreatsDisplay() // refresh when returning from Alpha
-    }
-
-    private fun updateTreatsDisplay() {
-        val prefs = requireContext().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-        val treats = prefs.getInt(PREF_KEY_TREATS, 0)
-        binding.textTreatsValue.text = treats.toString()
     }
 }
